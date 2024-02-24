@@ -7,6 +7,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SagePayMvc", "src\SagePayMv
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SagePayMvc.Tests", "src\SagePayMvc.Tests\SagePayMvc.Tests.csproj", "{A5BB793D-DAE5-4B79-B158-79A302EC678C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SagePayMvc.Sample", "Sample\SagePayMvc.Sample\SagePayMvc.Sample\SagePayMvc.Sample.csproj", "{D4890792-42C7-4D48-96ED-BDC025CCAC5C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{2A7A2B7B-6568-4947-A5F1-35C91F28336D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0B61D5C6-03AC-4330-A54E-0AAD98ECD5B2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "sample", "sample", "{4D0D2769-1193-440F-9539-4A15AAB84C09}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,8 +29,17 @@ Global
 		{A5BB793D-DAE5-4B79-B158-79A302EC678C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A5BB793D-DAE5-4B79-B158-79A302EC678C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A5BB793D-DAE5-4B79-B158-79A302EC678C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4890792-42C7-4D48-96ED-BDC025CCAC5C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4890792-42C7-4D48-96ED-BDC025CCAC5C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4890792-42C7-4D48-96ED-BDC025CCAC5C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4890792-42C7-4D48-96ED-BDC025CCAC5C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9A130697-C90F-4CDA-96B3-DC5C76D40114} = {2A7A2B7B-6568-4947-A5F1-35C91F28336D}
+		{A5BB793D-DAE5-4B79-B158-79A302EC678C} = {0B61D5C6-03AC-4330-A54E-0AAD98ECD5B2}
+		{D4890792-42C7-4D48-96ED-BDC025CCAC5C} = {4D0D2769-1193-440F-9539-4A15AAB84C09}
 	EndGlobalSection
 EndGlobal
