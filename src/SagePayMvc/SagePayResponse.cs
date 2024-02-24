@@ -19,84 +19,93 @@
 #endregion
 
 using System.Text;
-using System.Web.Mvc;
-using System.Web.Security;
+using Microsoft.AspNetCore.Mvc;
 
-namespace SagePayMvc {
-	/// <summary>
-	/// Object that represents a notification POST from SagePay
-	/// </summary>
-	[ModelBinder(typeof (SagePayBinder))]
-	public class SagePayResponse {
-		public ResponseType Status { get; set; }
-		public string VendorTxCode { get; set; }
-		public string VPSTxId { get; set; }
-		public string VPSSignature { get; set; }
-		public string StatusDetail { get; set; }
-		public string TxAuthNo { get; set; }
-		public string AVSCV2 { get; set; }
-		public string AddressResult { get; set; }
-		public string PostCodeResult { get; set; }
-		public string CV2Result { get; set; }
-		public string GiftAid { get; set; }
-		public string ThreeDSecureStatus { get; set; }
-		public string CAVV { get; set; }
-		public string AddressStatus { get; set; }
-		public string PayerStatus { get; set; }
-		public string CardType { get; set; }
-		public string Last4Digits { get; set; }
-		public string DeclineCode { get; set; }
-		public string ExpiryDate { get; set; }
-		public string FraudResponse { get; set; }
-		public string BankAuthCode { get; set; }
+namespace SagePayMvc
+{
+    /// <summary>
+    /// Object that represents a notification POST from SagePay
+    /// </summary>
+    [ModelBinder(typeof(SagePayBinder))]
+    public class SagePayResponse
+    {
+        public ResponseType Status { get; set; }
+        public string VendorTxCode { get; set; }
+        public string VPSTxId { get; set; }
+        public string VPSSignature { get; set; }
+        public string StatusDetail { get; set; }
+        public string TxAuthNo { get; set; }
+        public string AVSCV2 { get; set; }
+        public string AddressResult { get; set; }
+        public string PostCodeResult { get; set; }
+        public string CV2Result { get; set; }
+        public string GiftAid { get; set; }
+        public string ThreeDSecureStatus { get; set; }
+        public string CAVV { get; set; }
+        public string AddressStatus { get; set; }
+        public string PayerStatus { get; set; }
+        public string CardType { get; set; }
+        public string Last4Digits { get; set; }
+        public string DeclineCode { get; set; }
+        public string ExpiryDate { get; set; }
+        public string FraudResponse { get; set; }
+        public string BankAuthCode { get; set; }
 
 
-		/// <summary>
-		/// Was the transaction successful?
-		/// </summary>
-		public virtual bool WasTransactionSuccessful {
-			get {
-				return (Status == ResponseType.Ok ||
-				        Status == ResponseType.Authenticated ||
-				        Status == ResponseType.Registered);
-			}
-		}
+        /// <summary>
+        /// Was the transaction successful?
+        /// </summary>
+        public virtual bool WasTransactionSuccessful
+        {
+            get
+            {
+                return (Status == ResponseType.Ok ||
+                        Status == ResponseType.Authenticated ||
+                        Status == ResponseType.Registered);
+            }
+        }
 
-		/// <summary>
-		/// Is the signature valid
-		/// </summary>
-		public virtual bool IsSignatureValid(string securityKey, string vendorName) {
-			return GenerateSignature(securityKey, vendorName) == VPSSignature;
-		}
+        /// <summary>
+        /// Is the signature valid
+        /// </summary>
+        public virtual bool IsSignatureValid(string securityKey, string vendorName)
+        {
+            return GenerateSignature(securityKey, vendorName) == VPSSignature;
+        }
 
-		/// <summary>
-		/// Generates the VPS Signature from the parameters of the POST.
-		/// </summary>
-		public virtual string GenerateSignature(string securityKey, string vendorName) {
-			var builder = new StringBuilder();
-			builder.Append(VPSTxId);
-			builder.Append(VendorTxCode);
-			builder.Append(Status.ToString().ToUpper());
-			builder.Append(TxAuthNo);
-			builder.Append(vendorName.ToLower());
-			builder.Append(AVSCV2);
-			builder.Append(securityKey);
-			builder.Append(AddressResult);
-			builder.Append(PostCodeResult);
-			builder.Append(CV2Result);
-			builder.Append(GiftAid);
-			builder.Append(ThreeDSecureStatus);
-			builder.Append(CAVV);
-			builder.Append(AddressStatus);
-			builder.Append(PayerStatus);
-			builder.Append(CardType);
-			builder.Append(Last4Digits);
-			builder.Append(DeclineCode);
-			builder.Append(ExpiryDate);
-			builder.Append(FraudResponse);
-			builder.Append(BankAuthCode);
-			var hash = FormsAuthentication.HashPasswordForStoringInConfigFile(builder.ToString(), "MD5");
-			return hash;
-		}
-	}
+        /// <summary>
+        /// Generates the VPS Signature from the parameters of the POST.
+        /// </summary>
+        public virtual string GenerateSignature(string securityKey, string vendorName)
+        {
+            var builder = new StringBuilder();
+            builder.Append(VPSTxId);
+            builder.Append(VendorTxCode);
+            builder.Append(Status.ToString().ToUpper());
+            builder.Append(TxAuthNo);
+            builder.Append(vendorName.ToLower());
+            builder.Append(AVSCV2);
+            builder.Append(securityKey);
+            builder.Append(AddressResult);
+            builder.Append(PostCodeResult);
+            builder.Append(CV2Result);
+            builder.Append(GiftAid);
+            builder.Append(ThreeDSecureStatus);
+            builder.Append(CAVV);
+            builder.Append(AddressStatus);
+            builder.Append(PayerStatus);
+            builder.Append(CardType);
+            builder.Append(Last4Digits);
+            builder.Append(DeclineCode);
+            builder.Append(ExpiryDate);
+            builder.Append(FraudResponse);
+            builder.Append(BankAuthCode);
+            
+            using var md5 = System.Security.Cryptography.MD5.Create();
+            var inputBytes = System.Text.Encoding.ASCII.GetBytes(builder.ToString());
+            var hashBytes = md5.ComputeHash(inputBytes);
+
+            return Convert.ToHexString(hashBytes);
+        }
+    }
 }

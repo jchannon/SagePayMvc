@@ -18,7 +18,8 @@
 
 #endregion
 
-using System.Web.Mvc;
+
+using Microsoft.AspNetCore.Mvc;
 
 namespace SagePayMvc.ActionResults {
 	/// <summary>
@@ -26,19 +27,21 @@ namespace SagePayMvc.ActionResults {
 	/// </summary>
 	public abstract class SagePayResult : ActionResult {
 		readonly string vendorTxCode;
+		readonly IUrlHelper urlHelper;
 
-		protected SagePayResult(string vendorTxCode) {
+		protected SagePayResult(string vendorTxCode, IUrlHelper urlHelper) {
 			this.vendorTxCode = vendorTxCode;
+			this.urlHelper = urlHelper;
 		}
 
-		protected string BuildFailedUrl(ControllerContext context) {
+		protected string BuildFailedUrl(ActionContext context) {
 			var resolver = UrlResolver.Current;
-			return resolver.BuildFailedTransactionUrl(context.RequestContext, vendorTxCode);
+			return resolver.BuildFailedTransactionUrl(this.urlHelper, vendorTxCode);
 		}
 
-		protected string BuildSuccessUrl(ControllerContext context) {
+		protected string BuildSuccessUrl(ActionContext context) {
 			var resolver = UrlResolver.Current;
-			return resolver.BuildSuccessfulTransactionUrl(context.RequestContext, vendorTxCode);
+			return resolver.BuildSuccessfulTransactionUrl(this.urlHelper, vendorTxCode);
 		}
 	}
 }

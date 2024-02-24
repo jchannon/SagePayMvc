@@ -44,7 +44,7 @@ namespace SagePayMvc {
 			                                          relatedSecurityKey,
 			                                          relatedAuthNo);
 
-			string sagePayUrl = configuration.RefundUrl;
+			var sagePayUrl = configuration.RefundUrl;
 
 			var serializer = new HttpPostSerializer();
 			var postData = serializer.Serialize(registration);

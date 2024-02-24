@@ -18,60 +18,61 @@
 
 #endregion
 
-using System;
+using Microsoft.AspNetCore.TestHost;
 using NUnit.Framework;
-using SagePayMvc.ActionResults;
 
 namespace SagePayMvc.Tests {
-	[TestFixture]
-	public class InvalidSignatureResultTester {
-		InvalidSignatureResult result;
-		MockHttpContext context;
-		TestController controller;
+    [TestFixture]
+    public class InvalidSignatureResultTester {
+        TestServer server;
 
-		[TestFixtureSetUp]
-		public void TestFixtureSetup() {
-			UrlResolver.Initialize(() => new StubUrlResolver());
-		}
+        HttpClient httpClient;
 
-		[TestFixtureTearDown]
-		public void TestFixtureTeardown() {
-			UrlResolver.Initialize(null);
-		}
 
-		[SetUp]
-		public void Setup() {
-			result = new InvalidSignatureResult("foo");
-			context = new MockHttpContext();
-			controller = new TestController(context);
-		}
+        [SetUp]
+        public void Setup() {
+            this.server = new TestServer(
+                new WebHostBuilder()
+                    .ConfigureServices(x => {
+                        x.AddRouting();
+                        x.AddControllers();
+                    })
+                    .Configure(x => {
+                        x.UseRouting();
 
-		[Test]
-		public void Sets_content_type() {
-			context.HttpResponse.SetupProperty(x => x.ContentType);
-			result.ExecuteResult(controller.ControllerContext);
-			context.HttpResponse.Object.ContentType.ShouldEqual("text/plain");
-		}
+                        x.UseEndpoints(endpoints => { endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}"); });
+                    })
+            );
+            this.httpClient = this.server.CreateClient();
+        }
 
-		[Test]
-		public void Sets_status_to_invalid() {
-			result.ExecuteResult(controller.ControllerContext);
-			var output = context.Object.Response.Output.ToString();
-			output.ShouldStartWith("Status=INVALID" + Environment.NewLine);
-		}
+        [Test]
+        public async Task Sets_content_type() {
+            var res = await this.httpClient.GetAsync("test/invalid");
+            res.Content.Headers.ContentType!.MediaType.ShouldEqual("text/plain");
+        }
 
-		[Test]
-		public void Sets_redirectUrl() {
-			result.ExecuteResult(controller.ControllerContext);
-			var output = context.Object.Response.Output.ToString().Split(new[] {Environment.NewLine}, StringSplitOptions.None);
-			output[1].ShouldEqual("RedirectURL=" + StubUrlResolver.FailUrl);
-		}
+        [Test]
+        public async Task Sets_status_to_invalid() {
+            var res = await this.httpClient.GetAsync("test/invalid");
+            var body = await res.Content.ReadAsStringAsync();
+            body.ShouldStartWith("Status=INVALID" + Environment.NewLine);
+        }
 
-		[Test]
-		public void Sets_statusDetail() {
-			result.ExecuteResult(controller.ControllerContext);
-			var output = context.Object.Response.Output.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-			output[2].ShouldEqual("StatusDetail=Cannot match the MD5 Hash. Order might be tampered with.");
-		}
-	}
+        [Test]
+        public async Task Sets_redirectUrl() {
+            var res = await this.httpClient.GetAsync("test/invalid");
+            var body = await res.Content.ReadAsStringAsync();
+            var output = body.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            output[1].ShouldEqual("RedirectURL=" + Configuration.Current.Protocol + "://" + Configuration.Current.NotificationHostName + "/" + Configuration.Current.FailedController + "/" + Configuration.Current.FailedAction + "?vendorTxCode=123");
+        }
+
+        [Test]
+        public async Task Sets_statusDetail() {
+            var res = await this.httpClient.GetAsync("test/invalid");
+            var body = await res.Content.ReadAsStringAsync();
+            var output = body.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            output[2].ShouldEqual("StatusDetail=Cannot match the MD5 Hash. Order might be tampered with.");
+        }
+    }
 }

@@ -18,21 +18,28 @@
 
 #endregion
 
-using System.Web.Mvc;
 
-namespace SagePayMvc.ActionResults {
-	/// <summary>
-	/// Action result used when an invalid signature is returned from SagePay.
-	/// </summary>
-	public class InvalidSignatureResult : SagePayResult {
-		public InvalidSignatureResult(string vendorTxCode) : base(vendorTxCode) {
-		}
+using Microsoft.AspNetCore.Mvc;
 
-		public override void ExecuteResult(ControllerContext context) {
-			context.HttpContext.Response.ContentType = "text/plain";
-			context.HttpContext.Response.Output.WriteLine("Status=INVALID");
-			context.HttpContext.Response.Output.WriteLine("RedirectURL={0}", BuildFailedUrl(context));
-			context.HttpContext.Response.Output.WriteLine("StatusDetail=Cannot match the MD5 Hash. Order might be tampered with.");
-		}
-	}
+namespace SagePayMvc.ActionResults
+{
+    /// <summary>
+    /// Action result used when an invalid signature is returned from SagePay.
+    /// </summary>
+    public class InvalidSignatureResult : SagePayResult
+    {
+        public InvalidSignatureResult(string vendorTxCode, IUrlHelper urlHelper) : base(vendorTxCode, urlHelper)
+        {
+        }
+
+
+        public override async Task ExecuteResultAsync(ActionContext context)
+        {
+            context.HttpContext.Response.ContentType = "text/plain";
+            await context.HttpContext.Response.WriteAsync("Status=INVALID"+Environment.NewLine);
+            await context.HttpContext.Response.WriteAsync($"RedirectURL={BuildFailedUrl(context)}"+Environment.NewLine);
+            await context.HttpContext.Response.WriteAsync(
+                "StatusDetail=Cannot match the MD5 Hash. Order might be tampered with."+Environment.NewLine);
+        }
+    }
 }

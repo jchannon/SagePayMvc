@@ -18,35 +18,37 @@
 
 #endregion
 
-using System.Web.Mvc;
+
+using Microsoft.AspNetCore.Mvc;
 
 namespace SagePayMvc.ActionResults {
-	/// <summary>
-	/// ActionResult to be returned for a valid order (irrespective of whether payment failed or succeeded)
-	/// </summary>
-	public class ValidOrderResult : SagePayResult {
-		readonly SagePayResponse response;
+    /// <summary>
+    /// ActionResult to be returned for a valid order (irrespective of whether payment failed or succeeded)
+    /// </summary>
+    public class ValidOrderResult : SagePayResult {
+        readonly SagePayResponse response;
 
-		public ValidOrderResult(string vendorTxCode, SagePayResponse response) : base(vendorTxCode) {
-			this.response = response;
-		}
+        public ValidOrderResult(string vendorTxCode, SagePayResponse response, IUrlHelper urlHelper) : base(vendorTxCode, urlHelper) {
+            this.response = response;
+        }
 
-		public override void ExecuteResult(ControllerContext context) {
-			context.HttpContext.Response.ContentType = "text/plain";
 
-			if (response.Status == ResponseType.Error) {
-				context.HttpContext.Response.Output.WriteLine("Status=INVALID");
-			}
-			else {
-				context.HttpContext.Response.Output.WriteLine("Status=OK");
-			}
+        public override async Task ExecuteResultAsync(ActionContext context) {
+            context.HttpContext.Response.ContentType = "text/plain";
 
-			if (response.WasTransactionSuccessful) {
-				context.HttpContext.Response.Output.WriteLine("RedirectURL={0}", BuildSuccessUrl(context));
-			}
-			else {
-				context.HttpContext.Response.Output.WriteLine("RedirectURL={0}", BuildFailedUrl(context));
-			}
-		}
-	}
+            if (response.Status == ResponseType.Error) {
+                await context.HttpContext.Response.WriteAsync("Status=INVALID" + Environment.NewLine);
+            }
+            else {
+                await context.HttpContext.Response.WriteAsync("Status=OK" + Environment.NewLine);
+            }
+
+            if (response.WasTransactionSuccessful) {
+                await context.HttpContext.Response.WriteAsync($"RedirectURL={BuildSuccessUrl(context)}" + Environment.NewLine);
+            }
+            else {
+                await context.HttpContext.Response.WriteAsync($"RedirectURL={BuildFailedUrl(context)}" + Environment.NewLine);
+            }
+        }
+    }
 }

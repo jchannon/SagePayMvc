@@ -19,7 +19,6 @@
 #endregion
 
 using System.Globalization;
-using System.Threading;
 using NUnit.Framework;
 
 namespace SagePayMvc.Tests {

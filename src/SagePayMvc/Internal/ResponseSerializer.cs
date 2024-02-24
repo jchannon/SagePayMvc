@@ -51,9 +51,9 @@ namespace SagePayMvc.Internal {
 			var bits = input.Split(new[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries);
 
 			foreach (var nameValuePairCombined in bits) {
-				int index = nameValuePairCombined.IndexOf('=');
-				string name = nameValuePairCombined.Substring(0, index);
-				string value = nameValuePairCombined.Substring(index + 1);
+				var index = nameValuePairCombined.IndexOf('=');
+				var name = nameValuePairCombined.Substring(0, index);
+				var value = nameValuePairCombined.Substring(index + 1);
 
 				var prop = type.GetProperty(name, BindingFlags.Public | BindingFlags.Instance);
 

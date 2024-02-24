@@ -18,59 +18,64 @@
 
 #endregion
 
-using System;
+using Microsoft.AspNetCore.TestHost;
 using NUnit.Framework;
-using SagePayMvc.ActionResults;
 
 namespace SagePayMvc.Tests {
-	[TestFixture]
-	public class ErrorResultTester {
-		ErrorResult result;
-		MockHttpContext context;
-		TestController controller;
+    [TestFixture]
+    public class ErrorResultTester {
+        TestServer server;
 
-		[TestFixtureSetUp]
-		public void TestFixtureSetup() {
-			UrlResolver.Initialize(() => new StubUrlResolver());
-		}
+        HttpClient httpClient;
 
-		[TestFixtureTearDown]
-		public void TestFixtureTeardown() {
-			UrlResolver.Initialize(null);
-		}
 
-		[SetUp]
-		public void Setup() {
-			result = new ErrorResult();
-			context = new MockHttpContext();
-			controller = new TestController(context);
-		}
+        [SetUp]
+        public void Setup() {
+            this.server = new TestServer(
+                new WebHostBuilder()
+                    .ConfigureServices(x => {
+                        x.AddRouting();
+                        x.AddControllers();
+                    })
+                    .Configure(x => {
+                        x.UseRouting();
 
-		[Test]
-		public void Sets_content_Type() {
-			result.ExecuteResult(controller.ControllerContext);
-			context.Object.Response.ContentType.ShouldEqual("text/plain");
-		}
+                        x.UseEndpoints(endpoints => { endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}"); });
+                    })
+            );
+            this.httpClient = this.server.CreateClient();
+        }
 
-		[Test]
-		public void Sets_status_to_error() {
-			result.ExecuteResult(controller.ControllerContext);
-			var output = context.Object.Response.Output.ToString();
-			output.ShouldStartWith("Status=ERROR" + Environment.NewLine);
-		}
 
-		[Test]
-		public void Sets_redirectUrl() {
-			result.ExecuteResult(controller.ControllerContext);
-			var output = context.Object.Response.Output.ToString().Split(new[] {Environment.NewLine}, StringSplitOptions.None);
-			output[1].ShouldEqual("RedirectURL=" + StubUrlResolver.FailUrl);
-		}
+        [Test]
+        public async Task Sets_content_Type() {
+            var res = await this.httpClient.GetAsync("test/error");
+            res.Content.Headers.ContentType!.MediaType.ShouldEqual("text/plain");
+        }
 
-		[Test]
-		public void Sets_statusDetail() {
-			result.ExecuteResult(controller.ControllerContext);
-			var output = context.Object.Response.Output.ToString().Split(new[] {Environment.NewLine}, StringSplitOptions.None);
-			output[2].ShouldEqual("StatusDetail=An error occurred when processing the request.");
-		}
-	}
+        [Test]
+        public async Task Sets_status_to_error() {
+            var res = await this.httpClient.GetAsync("test/error");
+            var body = await res.Content.ReadAsStringAsync();
+            body.ShouldStartWith("Status=ERROR" + Environment.NewLine);
+        }
+
+        [Test]
+        public async Task Sets_redirectUrl() {
+            var res = await this.httpClient.GetAsync("test/error");
+            var body = await res.Content.ReadAsStringAsync();
+
+            var output = body.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            output[1].ShouldEqual("RedirectURL=" + Configuration.Current.Protocol + "://" + Configuration.Current.NotificationHostName + "/" + Configuration.Current.FailedController + "/" + Configuration.Current.FailedAction);
+        }
+
+        [Test]
+        public async Task Sets_statusDetail() {
+            var res = await this.httpClient.GetAsync("test/error");
+            var body = await res.Content.ReadAsStringAsync();
+
+            var output = body.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            output[2].ShouldEqual("StatusDetail=An error occurred when processing the request.");
+        }
+    }
 }

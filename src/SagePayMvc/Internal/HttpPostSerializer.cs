@@ -47,10 +47,10 @@ namespace SagePayMvc.Internal {
 
 				var format = GetFormat(property);
 				// Always use EN-GB
-				string convertedValue = string.Format(CultureInfo.InvariantCulture, format, rawValue);
+				var convertedValue = string.Format(CultureInfo.InvariantCulture, format, rawValue);
 
 				if (ShouldEncode(property)) {
-					convertedValue = HttpUtility.UrlEncode(convertedValue, Encoding.GetEncoding("ISO-8859-15"));
+					convertedValue = HttpUtility.UrlEncode(convertedValue, Encoding.GetEncoding("ISO-8859-1"));
 				}
 
 				pairs.Add(property.Name, convertedValue);

@@ -18,68 +18,109 @@
 
 #endregion
 
-using System;
-using System.Security.Policy;
-using System.Web.Mvc;
-using System.Web.Routing;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 
 namespace SagePayMvc.Tests {
-	[TestFixture]
-	public class DefaultUrlResolverTester {
-		DefaultUrlResolver resolver;
-		ControllerContext context;
+    [TestFixture]
+    public class DefaultUrlResolverTester {
+        TestServer server;
+        HttpClient httpClient;
 
-		[TestFixtureSetUp]
-		public void TestFixtureSetup() {
-			RouteTable.Routes.Clear();
+        [OneTimeSetUp]
+        public void TestFixtureSetup() {
+            Configuration.Configure(new Configuration { NotificationHostName = "foo.com" });
+        }
 
-			Configuration.Configure(new Configuration {NotificationHostName = "foo.com"});
-			RouteTable.Routes.MapRoute("payment-response", "{controller}/{action}/{vendorTxCode}", new {action = "Index", vendorTxCode = ""});
-		}
+        [OneTimeTearDown]
+        public void TestFixtureTeardown() {
+            Configuration.Configure(null);
+        }
 
-		[TestFixtureTearDown]
-		public void TestFixtureTeardown() {
-			RouteTable.Routes.Clear();
-			Configuration.Configure(null);
-		}
 
-		[SetUp]
-		public void Setup() {
-			resolver = new DefaultUrlResolver();
-			var httpContext = new MockHttpContext();
-			httpContext.HttpRequest.Setup(x => x.Url).Returns(new Uri("http://foo.com/fake/path"));
-			context = new TestController(httpContext).ControllerContext;
-		}
+        public void Setup(string routeName, string pattern, object routeDefinition) {
+            this.server = new TestServer(
+                new WebHostBuilder()
+                    .ConfigureServices(x => {
+                        x.AddRouting();
+                        x.AddControllers();
+                    })
+                    .Configure(x => {
+                        x.UseRouting();
 
-		[Test]
-		public void Resolves_successful_url() {
-			string url = resolver.BuildSuccessfulTransactionUrl(context.RequestContext, "foo");
-			url.ShouldEqual("http://foo.com/PaymentResponse/Success/foo");
-		}
+                        x.UseEndpoints(endpoints => { endpoints.MapControllerRoute(routeName, pattern, routeDefinition); });
+                    })
+            );
+            this.httpClient = this.server.CreateClient();
+        }
 
-		[Test]
-		public void Resolves_failed_url() {
-			string url = resolver.BuildFailedTransactionUrl(context.RequestContext, "foo");
-			url.ShouldEqual("http://foo.com/PaymentResponse/Failed/foo");
-		}
+        private static IEnumerable<TestCaseData> SuccessRoutePatterns() {
+            yield return new TestCaseData("payment-response", "{controller}/{action}/{vendorTxCode}", new { action = "Index", vendorTxCode = "" }, "http://foo.com/PaymentResponse/Success/foo");
+            yield return new TestCaseData("default", "{controller=Home}/{action=Index}", null, "http://foo.com/PaymentResponse/Success?vendorTxCode=foo");
+        }
 
-		[Test]
-		public void Resolves_notification_url() {
-			string url = resolver.BuildNotificationUrl(context.RequestContext);
-			url.ShouldEqual("http://foo.com/PaymentResponse");
-		}
+        private static IEnumerable<TestCaseData> FailureRoutePatterns() {
+            yield return new TestCaseData("payment-response", "{controller}/{action}/{vendorTxCode}", new { action = "Index", vendorTxCode = "" }, "http://foo.com/PaymentResponse/Failed/foo");
+            yield return new TestCaseData("default", "{controller=Home}/{action=Index}", null, "http://foo.com/PaymentResponse/Failed?vendorTxCode=foo");
+        }
 
-		[Test]
-		public void Uses_raw_notification_url_if_notification_controller_null() {
-		}
+        private static IEnumerable<TestCaseData> NotifyRoutePatterns() {
+            yield return new TestCaseData("payment-response", "{controller}/{action}/{vendorTxCode}", new { action = "Index", vendorTxCode = "" }, "http://foo.com/PaymentResponse");
+        }
 
-		[Test]
-		public void Uses_https() {
-			Configuration.Current.Protocol = "https";
-			var url = resolver.BuildSuccessfulTransactionUrl(context.RequestContext, "foo");
-			Configuration.Current.Protocol = "http";
-			url.ShouldEqual("https://foo.com/PaymentResponse/Success/foo");
-		}
-	}
+        private static IEnumerable<TestCaseData> HttpsRoutePatterns() {
+            yield return new TestCaseData("payment-response", "{controller}/{action}/{vendorTxCode}", new { action = "Index", vendorTxCode = "" }, "https://foo.com/PaymentResponse/Success/foo");
+            yield return new TestCaseData("default", "{controller=Home}/{action=Index}", null, "https://foo.com/PaymentResponse/Success?vendorTxCode=foo");
+        }
+
+        [Test, TestCaseSource(nameof(SuccessRoutePatterns))]
+        public async Task Resolves_successful_url(string routeName, string pattern, object routeDefinition, string expectedResult) {
+            Setup(routeName, pattern, routeDefinition);
+
+            var res = await this.httpClient.GetAsync("/test/getsuccessurl");
+            var body = await res.Content.ReadAsStringAsync();
+
+            body.ShouldEqual(expectedResult);
+        }
+
+        [Test, TestCaseSource(nameof(FailureRoutePatterns))]
+        public async Task Resolves_failed_url(string routeName, string pattern, object routeDefinition, string expectedResult) {
+            Setup(routeName, pattern, routeDefinition);
+
+            var res = await this.httpClient.GetAsync("/test/getfailureurl");
+            var body = await res.Content.ReadAsStringAsync();
+
+            body.ShouldEqual(expectedResult);
+        }
+
+        [Test, TestCaseSource(nameof(NotifyRoutePatterns))]
+        public async Task Resolves_notification_url(string routeName, string pattern, object routeDefinition, string expectedResult) {
+            Setup(routeName, pattern, routeDefinition);
+
+            var res = await this.httpClient.GetAsync("/test/getnotifyurl");
+            var body = await res.Content.ReadAsStringAsync();
+
+            body.ShouldEqual(expectedResult);
+        }
+
+        [Test]
+        public void Uses_raw_notification_url_if_notification_controller_null() {
+        }
+
+        [Test, TestCaseSource(nameof(HttpsRoutePatterns))]
+        public async Task Uses_https(string routeName, string pattern, object routeDefinition, string expectedResult) {
+            Configuration.Current.Protocol = "https";
+            Setup(routeName, pattern, routeDefinition);
+
+            var res = await this.httpClient.GetAsync("/test/getsuccessurl");
+            var body = await res.Content.ReadAsStringAsync();
+
+            body.ShouldEqual(expectedResult);
+
+            Configuration.Current.Protocol = "http";
+        }
+    }
 }

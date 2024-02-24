@@ -18,21 +18,24 @@
 
 #endregion
 
-using System.Web.Mvc;
+
+using Microsoft.AspNetCore.Mvc;
 
 namespace SagePayMvc.ActionResults {
-	/// <summary>
-	/// Action Result to be returned when the transaction with the specified VendorTxCode could not be found.
-	/// </summary>
-	public class TransactionNotFoundResult : SagePayResult {
-		public TransactionNotFoundResult(string vendorTxCode) : base(vendorTxCode) {
-		}
+    /// <summary>
+    /// Action Result to be returned when the transaction with the specified VendorTxCode could not be found.
+    /// </summary>
+    public class TransactionNotFoundResult : SagePayResult {
+        public TransactionNotFoundResult(string vendorTxCode, IUrlHelper urlHelper) : base(vendorTxCode, urlHelper) {
+        }
 
-		public override void ExecuteResult(ControllerContext context) {
-			context.HttpContext.Response.ContentType = "text/plain";
-			context.HttpContext.Response.Output.WriteLine("Status=INVALID");
-			context.HttpContext.Response.Output.WriteLine("RedirectURL={0}", BuildFailedUrl(context));
-			context.HttpContext.Response.Output.WriteLine("StatusDetail=Unable to find the transaction in our database.");
-		}
-	}
+
+        public override async Task ExecuteResultAsync(ActionContext context) {
+            context.HttpContext.Response.ContentType = "text/plain";
+            await context.HttpContext.Response.WriteAsync("Status=INVALID" + Environment.NewLine);
+            await context.HttpContext.Response.WriteAsync($"RedirectURL={BuildFailedUrl(context)}" + Environment.NewLine);
+            await context.HttpContext.Response.WriteAsync(
+                "StatusDetail=Unable to find the transaction in our database." + Environment.NewLine);
+        }
+    }
 }

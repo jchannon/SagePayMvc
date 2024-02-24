@@ -45,7 +45,7 @@ namespace SagePayMvc {
 		/// <param name="type"></param>
 		/// <returns></returns>
 		public string ToString(AddressType type) {
-			string prefix = type.ToString();
+			var prefix = type.ToString();
 			var builder = new StringBuilder();
 			builder.Append(BuildPropertyString(prefix, x => x.Surname, Surname));
 			builder.Append(BuildPropertyString(prefix, x => x.Firstnames, Firstnames));
@@ -63,7 +63,7 @@ namespace SagePayMvc {
 		string BuildPropertyString(string prefix, Expression<Func<Address, object>> expression, string value, bool optional) {
 			if (optional && string.IsNullOrEmpty(value)) return null;
 
-			string name = PropertyToName(expression);
+			var name = PropertyToName(expression);
 			return string.Format("&{0}{1}={2}", prefix, name, HttpUtility.UrlEncode(value));
 		}
 

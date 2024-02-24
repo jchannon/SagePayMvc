@@ -19,93 +19,87 @@
 #endregion
 
 using System;
+using Microsoft.AspNetCore.TestHost;
 using NUnit.Framework;
 using SagePayMvc.ActionResults;
 
 namespace SagePayMvc.Tests {
-	[TestFixture]
-	public class SuccessfulTransactionResultTester {
-		ValidOrderResult result;
-		TestController controller;
-		SagePayResponse response;
-		MockHttpContext context;
+    [TestFixture]
+    public class SuccessfulTransactionResultTester {
+        TestServer server;
+        HttpClient httpClient;
 
-		[TestFixtureSetUp]
-		public void TestFixtureSetup() {
-			UrlResolver.Initialize(() => new StubUrlResolver());
-		}
 
-		[TestFixtureTearDown]
-		public void TestFixtureTeardown() {
-			UrlResolver.Initialize(null);
-		}
+        [SetUp]
+        public void Setup() {
+            this.server = new TestServer(
+                new WebHostBuilder()
+                    .ConfigureServices(x => {
+                        x.AddRouting();
+                        x.AddControllers();
+                    })
+                    .Configure(x => {
+                        x.UseRouting();
 
-		[SetUp]
-		public void Setup() {
-			context = new MockHttpContext();
-			controller = new TestController(context);
-			response = new SagePayResponse();
-			result = new ValidOrderResult("foo", response);
-		}
+                        x.UseEndpoints(endpoints => { endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}"); });
+                    })
+            );
+            this.httpClient = this.server.CreateClient();
+        }
 
-		[Test]
-		public void Sets_content_type() {
-			result.ExecuteResult(controller.ControllerContext);
-			context.Object.Response.ContentType.ShouldEqual("text/plain");
-		}
+        [Test]
+        public async Task Sets_content_type() {
+            var res = await this.httpClient.GetAsync("test/sagepayok");
+            res.Content.Headers.ContentType!.MediaType.ShouldEqual("text/plain");
+        }
 
-		[Test]
-		public void Sets_status_ok_if_response_status_not_error() {
-			response.Status = ResponseType.Ok;
+        [Test]
+        public async Task Sets_status_ok_if_response_status_not_error() {
+            var res = await this.httpClient.GetAsync("test/sagepayok");
+            var body = await res.Content.ReadAsStringAsync();
+            body.ShouldStartWith("Status=OK" + Environment.NewLine);
+        }
 
-			result.ExecuteResult(controller.ControllerContext);
-			var output = context.Object.Response.Output.ToString();
-			output.ShouldStartWith("Status=OK" + Environment.NewLine);
-		}
+        [Test]
+        public async Task Sets_status_invalid_if_response_status_is_error() {
+            var res = await this.httpClient.GetAsync("test/sagepayerror");
+            var body = await res.Content.ReadAsStringAsync();
+            body.ShouldStartWith("Status=INVALID" + Environment.NewLine);
+        }
 
-		[Test]
-		public void Sets_status_invalid_if_response_status_is_error() {
-			response.Status = ResponseType.Error;
+        [Test]
+        public async Task Redirect_to_order_success_page_if_status_is_ok() {
+            var res = await this.httpClient.GetAsync("test/sagepayok");
+            var body = await res.Content.ReadAsStringAsync();
 
-			result.ExecuteResult(controller.ControllerContext);
-			var output = context.Object.Response.Output.ToString();
-			output.ShouldStartWith("Status=INVALID" + Environment.NewLine);
-		}
+            var output = body.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            output[1].ShouldEqual("RedirectURL=" + Configuration.Current.Protocol + "://" + Configuration.Current.NotificationHostName + "/" + Configuration.Current.SuccessController + "/" + Configuration.Current.SuccessAction + "?vendorTxCode=123");
+        }
 
-		[Test]
-		public void Redirect_to_order_success_page_if_status_is_ok() {
-			response.Status = ResponseType.Ok;
+        [Test]
+        public async Task Redirect_to_order_success_page_if_status_is_authenticated() {
+            var res = await this.httpClient.GetAsync("test/sagepayauthenticated");
+            var body = await res.Content.ReadAsStringAsync();
 
-			result.ExecuteResult(controller.ControllerContext);
-			var output = context.Object.Response.Output.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-			output[1].ShouldEqual("RedirectURL=" + StubUrlResolver.SuccessUrl);
-		}
+            var output = body.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            output[1].ShouldEqual("RedirectURL=" + Configuration.Current.Protocol + "://" + Configuration.Current.NotificationHostName + "/" + Configuration.Current.SuccessController + "/" + Configuration.Current.SuccessAction + "?vendorTxCode=123");
+        }
 
-		[Test]
-		public void Redirect_to_order_success_page_if_status_is_authenticated() {
-			response.Status = ResponseType.Authenticated;
+        [Test]
+        public async Task Redirect_to_order_success_page_if_status_is_registered() {
+            var res = await this.httpClient.GetAsync("test/sagepayregistered");
+            var body = await res.Content.ReadAsStringAsync();
 
-			result.ExecuteResult(controller.ControllerContext);
-			var output = context.Object.Response.Output.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-			output[1].ShouldEqual("RedirectURL=" + StubUrlResolver.SuccessUrl);
-		}
+            var output = body.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            output[1].ShouldEqual("RedirectURL=" + Configuration.Current.Protocol + "://" + Configuration.Current.NotificationHostName + "/" + Configuration.Current.SuccessController + "/" + Configuration.Current.SuccessAction + "?vendorTxCode=123");
+        }
 
-		[Test]
-		public void Redirect_to_order_success_page_if_status_is_registered() {
-			response.Status = ResponseType.Registered;
-
-			result.ExecuteResult(controller.ControllerContext);
-			var output = context.Object.Response.Output.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-			output[1].ShouldEqual("RedirectURL=" + StubUrlResolver.SuccessUrl);
-		}
-
-		[Test]
-		public void Redirect_to_order_failed_page_if_status_not_one_of_ok_authenticated_registered() {
-			response.Status = ResponseType.Error;
-
-			result.ExecuteResult(controller.ControllerContext);
-			var output = context.Object.Response.Output.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-			output[1].ShouldEqual("RedirectURL=" + StubUrlResolver.FailUrl);
-		}
-	}
+        [Test]
+        public async Task Redirect_to_order_failed_page_if_status_not_one_of_ok_authenticated_registered() {
+            var res = await this.httpClient.GetAsync("test/sagepayerror");
+            var body = await res.Content.ReadAsStringAsync();
+            var output = body.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            output[1].ShouldEqual("RedirectURL=" + Configuration.Current.Protocol + "://" + Configuration.Current.NotificationHostName + "/" + Configuration.Current.FailedController + "/" + Configuration.Current.FailedAction + "?vendorTxCode=123");
+        }
+    }
 }

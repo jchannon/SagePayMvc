@@ -18,21 +18,28 @@
 
 #endregion
 
-using System.Web.Mvc;
+using System.Buffers;
+using Microsoft.AspNetCore.Mvc;
 
-namespace SagePayMvc.ActionResults {
-	/// <summary>
-	/// Action Result returned when an error occurs.
-	/// </summary>
-	public class ErrorResult : SagePayResult {
-		public ErrorResult() : base(null) {
-		}
+namespace SagePayMvc.ActionResults
+{
+    /// <summary>
+    /// Action Result returned when an error occurs.
+    /// </summary>
+    public class ErrorResult : SagePayResult
+    {
+        public ErrorResult(IUrlHelper urlHelper) : base(null, urlHelper)
+        {
+        }
 
-		public override void ExecuteResult(ControllerContext context) {
-			context.HttpContext.Response.ContentType = "text/plain";
-			context.HttpContext.Response.Output.WriteLine("Status=ERROR");
-			context.HttpContext.Response.Output.WriteLine("RedirectURL={0}", BuildFailedUrl(context));
-			context.HttpContext.Response.Output.WriteLine("StatusDetail=An error occurred when processing the request.");
-		}
-	}
+
+        public override async Task ExecuteResultAsync(ActionContext context)
+        {
+            context.HttpContext.Response.ContentType = "text/plain";
+            await context.HttpContext.Response.WriteAsync("Status=ERROR" + Environment.NewLine);
+            await context.HttpContext.Response.WriteAsync($"RedirectURL={BuildFailedUrl(context)}"+ Environment.NewLine);
+            await context.HttpContext.Response.WriteAsync(
+                "StatusDetail=An error occurred when processing the request."+ Environment.NewLine);
+        }
+    }
 }

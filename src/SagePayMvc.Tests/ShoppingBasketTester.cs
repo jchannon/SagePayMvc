@@ -27,8 +27,8 @@ namespace SagePayMvc.Tests {
 		public void Converts_basket_to_string() {
 			//format is total items:description:quantity:ItemPrice:ItemTax:ItemTotal:LineTotal
 			//So this is 2 items in the basket:
-			//One called foo, with a price of £5, tax of £5 (total of £10)
-			//...and another called bar with a price of £2, tax of £3, (total of £5)
+			//One called foo, with a price of Â£5, tax of Â£5 (total of Â£10)
+			//...and another called bar with a price of Â£2, tax of Â£3, (total of Â£5)
 			//Yes, the tax rates are silly...
 			const string expected = "2:foo:1:5.00:5.00:10.00:10.00:bar:1:2.00:0.00:2.00:2.00";
 

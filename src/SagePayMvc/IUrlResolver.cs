@@ -18,7 +18,7 @@
 
 #endregion
 
-using System.Web.Routing;
+using Microsoft.AspNetCore.Mvc;
 
 namespace SagePayMvc {
 	/// <summary>
@@ -28,16 +28,16 @@ namespace SagePayMvc {
 		/// <summary>
 		/// Resolves the Failed Transaction URL to be sent to SagePay when the payment fails.
 		/// </summary>
-		string BuildFailedTransactionUrl(RequestContext context, string vendorTxCode);
+		string BuildFailedTransactionUrl(IUrlHelper url, string vendorTxCode);
 
 		/// <summary>
 		/// Resolves the Successful Transaction URL to be sent to SagePay when the payment succeeds.
 		/// </summary>
-		string BuildSuccessfulTransactionUrl(RequestContext context, string vendorTxCode);
+		string BuildSuccessfulTransactionUrl(IUrlHelper url, string vendorTxCode);
 
 		/// <summary>
 		/// Builds the notification URL.
 		/// </summary>
-		string BuildNotificationUrl(RequestContext context);
+		string BuildNotificationUrl(IUrlHelper url);
 	}
 }

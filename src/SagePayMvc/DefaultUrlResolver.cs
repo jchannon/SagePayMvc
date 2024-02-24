@@ -18,8 +18,8 @@
 
 #endregion
 
-using System.Web.Mvc;
-using System.Web.Routing;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 
 namespace SagePayMvc {
 	/// <summary>
@@ -30,30 +30,32 @@ namespace SagePayMvc {
 		public const string FailedActionName = "Failed";
 		public const string SuccessfulActionName = "Success";
 
-		public virtual string BuildFailedTransactionUrl(RequestContext context, string vendorTxCode) {
+		public virtual string BuildFailedTransactionUrl(IUrlHelper urlHelper, string vendorTxCode) {
 			var configuration = Configuration.Current;
-			var urlHelper = new UrlHelper(context);
+			
 			var routeValues = new RouteValueDictionary(new {controller = configuration.FailedController, action = configuration.FailedAction, vendorTxCode});
 
-            string url = urlHelper.RouteUrl(null, routeValues, configuration.Protocol, configuration.NotificationHostName);
+            var url = urlHelper.RouteUrl(null, routeValues, configuration.Protocol, configuration.NotificationHostName);
+			return url;
+		}
+		
+		public virtual string BuildSuccessfulTransactionUrl(IUrlHelper urlHelper, string vendorTxCode) {
+			var configuration = Configuration.Current;
+			
+			var routeValues = new RouteValueDictionary(new {controller = configuration.SuccessController, action = configuration.SuccessAction, vendorTxCode = vendorTxCode});
+
+			var url = urlHelper.RouteUrl(null, routeValues, configuration.Protocol, configuration.NotificationHostName);
 			return url;
 		}
 
-		public virtual string BuildSuccessfulTransactionUrl(RequestContext context, string vendorTxCode) {
-			var configuration = Configuration.Current;
-			var urlHelper = new UrlHelper(context);
-			var routeValues = new RouteValueDictionary(new {controller = configuration.SuccessController, action = configuration.SuccessAction, vendorTxCode});
+	
 
-			string url = urlHelper.RouteUrl(null, routeValues, configuration.Protocol, configuration.NotificationHostName);
-			return url;
-		}
-
-		public virtual string BuildNotificationUrl(RequestContext context) {
+		public virtual string BuildNotificationUrl(IUrlHelper urlHelper) {
 			var configuration = Configuration.Current;
-			var urlHelper = new UrlHelper(context);
+			
 			var routeValues = new RouteValueDictionary(new {controller = configuration.NotificationController, action = configuration.NotificationAction});
 
-			string url = urlHelper.RouteUrl(null, routeValues, configuration.Protocol, configuration.NotificationHostName);
+			var url = urlHelper.RouteUrl(null, routeValues, configuration.Protocol, configuration.NotificationHostName);
 			return url;
 		}
 	}

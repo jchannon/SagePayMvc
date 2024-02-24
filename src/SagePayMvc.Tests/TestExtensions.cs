@@ -19,19 +19,20 @@
 #endregion
 
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
 
 namespace SagePayMvc.Tests {
 	public static class TestExtensions {
 		public static void ShouldEqual(this object actual, object expected) {
-			Assert.AreEqual(expected, actual);
+			ClassicAssert.AreEqual(expected, actual);
 		}
 
 		public static void ShouldBeFalse(this bool actual) {
-			Assert.IsFalse(actual);
+			ClassicAssert.IsFalse(actual);
 		}
 
 		public static void ShouldBeTrue(this bool actual) {
-			Assert.IsTrue(actual);
+			ClassicAssert.IsTrue(actual);
 		}
 
 		public static void ShouldStartWith(this string actual, string expected) {
@@ -39,12 +40,12 @@ namespace SagePayMvc.Tests {
 		}
 
 		public static T ShouldBe<T>(this object actual) {
-			Assert.IsInstanceOf<T>(actual);
+			ClassicAssert.IsInstanceOf<T>(actual);
 			return (T) actual;
 		}
 
 		public static void ShouldBeTheSameAs(this object actual, object expected) {
-			Assert.AreSame(expected, actual);
+			ClassicAssert.AreSame(expected, actual);
 		}
 
         public static void ShouldContain(this string actual, string expected) {

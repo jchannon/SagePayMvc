@@ -19,58 +19,60 @@
 #endregion
 
 using System;
+using Microsoft.AspNetCore.TestHost;
 using NUnit.Framework;
 using SagePayMvc.ActionResults;
 
 namespace SagePayMvc.Tests {
-	[TestFixture]
-	public class TransactionNotFoundResultTester {
-		TransactionNotFoundResult result;
-		MockHttpContext context;
-		TestController controller;
+    [TestFixture]
+    public class TransactionNotFoundResultTester {
+        TestServer server;
+        HttpClient httpClient;
 
-		[TestFixtureSetUp]
-		public void TestFixtureSetup() {
-			UrlResolver.Initialize(() => new StubUrlResolver());
-		}
+        [SetUp]
+        public void Setup() {
+            this.server = new TestServer(
+                new WebHostBuilder()
+                    .ConfigureServices(x => {
+                        x.AddRouting();
+                        x.AddControllers();
+                    })
+                    .Configure(x => {
+                        x.UseRouting();
 
-		[TestFixtureTearDown]
-		public void TestFixtureTeardown() {
-			UrlResolver.Initialize(null);
-		}
+                        x.UseEndpoints(endpoints => { endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}"); });
+                    })
+            );
+            this.httpClient = this.server.CreateClient();
+        }
 
-		[SetUp]
-		public void Setup() {
-			result = new TransactionNotFoundResult("foo");
-			context = new MockHttpContext();
-			controller = new TestController(context);
-		}
+        [Test]
+        public async Task Sets_content_type() {
+            var res = await this.httpClient.GetAsync("test/transactionnotfound");
+            res.Content.Headers.ContentType!.MediaType.ShouldEqual("text/plain");
+        }
 
-		[Test]
-		public void Sets_content_type() {
-			result.ExecuteResult(controller.ControllerContext);
-			context.Object.Response.ContentType.ShouldEqual("text/plain");
-		}
+        [Test]
+        public async Task Sets_status_to_invalid() {
+            var res = await this.httpClient.GetAsync("test/transactionnotfound");
+            var body = await res.Content.ReadAsStringAsync();
+            body.ShouldStartWith("Status=INVALID" + Environment.NewLine);
+        }
 
-		[Test]
-		public void Sets_status_to_invalid() {
-			result.ExecuteResult(controller.ControllerContext);
-			var output = context.Object.Response.Output.ToString();
-			output.ShouldStartWith("Status=INVALID" + Environment.NewLine);
-		}
+        [Test]
+        public async Task Sets_redirectUrl() {
+            var res = await this.httpClient.GetAsync("test/transactionnotfound");
+            var body = await res.Content.ReadAsStringAsync();
+            var output = body.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            output[1].ShouldEqual("RedirectURL=" + Configuration.Current.Protocol + "://" + Configuration.Current.NotificationHostName + "/" + Configuration.Current.FailedController + "/" + Configuration.Current.FailedAction + "?vendorTxCode=123");
+        }
 
-		[Test]
-		public void Sets_redirectUrl() {
-			result.ExecuteResult(controller.ControllerContext);
-			var output = context.Object.Response.Output.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-			output[1].ShouldEqual("RedirectURL=" + StubUrlResolver.FailUrl);
-		}
-
-		[Test]
-		public void Sets_statusDetail() {
-			result.ExecuteResult(controller.ControllerContext);
-			var output = context.Object.Response.Output.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-			output[2].ShouldEqual("StatusDetail=Unable to find the transaction in our database.");
-		}
-	}
+        [Test]
+        public async Task Sets_statusDetail() {
+            var res = await this.httpClient.GetAsync("test/transactionnotfound");
+            var body = await res.Content.ReadAsStringAsync();
+            var output = body.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            output[2].ShouldEqual("StatusDetail=Unable to find the transaction in our database.");
+        }
+    }
 }

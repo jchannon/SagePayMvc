@@ -18,76 +18,85 @@
 
 #endregion
 
-using System.Collections.Generic;
-using System.Web.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using SagePayMvc.Internal;
 
-namespace SagePayMvc {
-	/// <summary>
-	/// IModelBinder implementation for deserializing a notification post into a SagePayResponse object.
-	/// </summary>
-	public class SagePayBinder : IModelBinder {
-		const string Status = "Status";
-		const string VendorTxCode = "VendorTxCode";
-		const string VPSTxId = "VPSTxId";
-		const string VPSSignature = "VPSSignature";
-		const string StatusDetail = "StatusDetail";
-		const string TxAuthNo = "TxAuthNo";
-		const string AVSCV2 = "AVSCV2";
-		const string AddressResult = "AddressResult";
-		const string PostCodeResult = "PostCodeResult";
-		const string CV2Result = "CV2Result";
-		const string GiftAid = "GiftAid";
-		const string ThreeDSecureStatus = "3DSecureStatus";
-		const string CAVV = "CAVV";
-		const string AddressStatus = "AddressStatus";
-		const string PayerStatus = "PayerStatus";
-		const string CardType = "CardType";
-		const string Last4Digits = "Last4Digits";
-		const string DeclineCode = "DeclineCode";
-		const string ExpiryDate = "ExpiryDate";
-		const string FraudResponse = "FraudResponse";
-		const string BankAuthCode = "BankAuthCode";
+namespace SagePayMvc
+{
+    /// <summary>
+    /// IModelBinder implementation for deserializing a notification post into a SagePayResponse object.
+    /// </summary>
+    public class SagePayBinder : IModelBinder
+    {
+        const string Status = "Status";
+        const string VendorTxCode = "VendorTxCode";
+        const string VPSTxId = "VPSTxId";
+        const string VPSSignature = "VPSSignature";
+        const string StatusDetail = "StatusDetail";
+        const string TxAuthNo = "TxAuthNo";
+        const string AVSCV2 = "AVSCV2";
+        const string AddressResult = "AddressResult";
+        const string PostCodeResult = "PostCodeResult";
+        const string CV2Result = "CV2Result";
+        const string GiftAid = "GiftAid";
+        const string ThreeDSecureStatus = "3DSecureStatus";
+        const string CAVV = "CAVV";
+        const string AddressStatus = "AddressStatus";
+        const string PayerStatus = "PayerStatus";
+        const string CardType = "CardType";
+        const string Last4Digits = "Last4Digits";
+        const string DeclineCode = "DeclineCode";
+        const string ExpiryDate = "ExpiryDate";
+        const string FraudResponse = "FraudResponse";
+        const string BankAuthCode = "BankAuthCode";
 
-		public object BindModel(ControllerContext controllerContext, ModelBindingContext bindingContext) {
-			var response = new SagePayResponse();
-			response.Status = GetStatus(bindingContext.ValueProvider);
-			response.VendorTxCode = GetFormField(VendorTxCode, bindingContext.ValueProvider);
-			response.VPSTxId = GetFormField(VPSTxId, bindingContext.ValueProvider);
-			response.VPSSignature = GetFormField(VPSSignature, bindingContext.ValueProvider);
-			response.StatusDetail = GetFormField(StatusDetail, bindingContext.ValueProvider);
-			response.TxAuthNo = GetFormField(TxAuthNo, bindingContext.ValueProvider);
-			response.AVSCV2 = GetFormField(AVSCV2, bindingContext.ValueProvider);
-			response.AddressResult = GetFormField(AddressResult, bindingContext.ValueProvider);
-			response.PostCodeResult = GetFormField(PostCodeResult, bindingContext.ValueProvider);
-			response.CV2Result = GetFormField(CV2Result, bindingContext.ValueProvider);
-			response.GiftAid = GetFormField(GiftAid, bindingContext.ValueProvider);
-			response.ThreeDSecureStatus = GetFormField(ThreeDSecureStatus, bindingContext.ValueProvider);
-			response.CAVV = GetFormField(CAVV, bindingContext.ValueProvider);
-			response.AddressStatus = GetFormField(AddressStatus, bindingContext.ValueProvider);
-			response.PayerStatus = GetFormField(PayerStatus, bindingContext.ValueProvider);
-			response.CardType = GetFormField(CardType, bindingContext.ValueProvider);
-			response.Last4Digits = GetFormField(Last4Digits, bindingContext.ValueProvider);
-			response.DeclineCode = GetFormField(DeclineCode, bindingContext.ValueProvider);
-			response.ExpiryDate = GetFormField(ExpiryDate, bindingContext.ValueProvider);
-			response.FraudResponse = GetFormField(FraudResponse, bindingContext.ValueProvider);
-			response.BankAuthCode = GetFormField(BankAuthCode, bindingContext.ValueProvider);
-			return response;
-		}
 
-		ResponseType GetStatus(IValueProvider valueProvider) {
-			string value = GetFormField(Status, valueProvider);
-			return ResponseSerializer.ConvertStringToSagePayResponseType(value);
-		}
+        ResponseType GetStatus(IValueProvider valueProvider)
+        {
+            var value = GetFormField(Status, valueProvider);
+            return ResponseSerializer.ConvertStringToSagePayResponseType(value);
+        }
 
-		string GetFormField(string key, IValueProvider provider) {
-			ValueProviderResult result = provider.GetValue(key);
+        string GetFormField(string key, IValueProvider provider)
+        {
+            var result = provider.GetValue(key);
 
-			if(result != null) {
-				return (string)result.ConvertTo(typeof(string));
-			}
+            if (result != ValueProviderResult.None)
+            {
+                return result.FirstValue;
+            }
 
-			return null;
-		}
-	}
+            return null;
+        }
+
+        public Task BindModelAsync(ModelBindingContext bindingContext)
+        {
+            var response = new SagePayResponse();
+            response.Status = GetStatus(bindingContext.ValueProvider);
+            response.VendorTxCode = GetFormField(VendorTxCode, bindingContext.ValueProvider);
+            response.VPSTxId = GetFormField(VPSTxId, bindingContext.ValueProvider);
+            response.VPSSignature = GetFormField(VPSSignature, bindingContext.ValueProvider);
+            response.StatusDetail = GetFormField(StatusDetail, bindingContext.ValueProvider);
+            response.TxAuthNo = GetFormField(TxAuthNo, bindingContext.ValueProvider);
+            response.AVSCV2 = GetFormField(AVSCV2, bindingContext.ValueProvider);
+            response.AddressResult = GetFormField(AddressResult, bindingContext.ValueProvider);
+            response.PostCodeResult = GetFormField(PostCodeResult, bindingContext.ValueProvider);
+            response.CV2Result = GetFormField(CV2Result, bindingContext.ValueProvider);
+            response.GiftAid = GetFormField(GiftAid, bindingContext.ValueProvider);
+            response.ThreeDSecureStatus = GetFormField(ThreeDSecureStatus, bindingContext.ValueProvider);
+            response.CAVV = GetFormField(CAVV, bindingContext.ValueProvider);
+            response.AddressStatus = GetFormField(AddressStatus, bindingContext.ValueProvider);
+            response.PayerStatus = GetFormField(PayerStatus, bindingContext.ValueProvider);
+            response.CardType = GetFormField(CardType, bindingContext.ValueProvider);
+            response.Last4Digits = GetFormField(Last4Digits, bindingContext.ValueProvider);
+            response.DeclineCode = GetFormField(DeclineCode, bindingContext.ValueProvider);
+            response.ExpiryDate = GetFormField(ExpiryDate, bindingContext.ValueProvider);
+            response.FraudResponse = GetFormField(FraudResponse, bindingContext.ValueProvider);
+            response.BankAuthCode = GetFormField(BankAuthCode, bindingContext.ValueProvider);
+
+            bindingContext.Result = ModelBindingResult.Success(response);
+
+            return Task.CompletedTask;
+        }
+    }
 }

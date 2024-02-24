@@ -18,52 +18,59 @@
 
 #endregion
 
-using System.Web.Routing;
+using Microsoft.AspNetCore.Mvc;
 using SagePayMvc.Internal;
 
-namespace SagePayMvc {
-	/// <summary>
-	/// Default ITransactionRegistrar implementation
-	/// </summary>
-	public class TransactionRegistrar : ITransactionRegistrar {
-		readonly Configuration configuration;
-		readonly IUrlResolver urlResolver;
-		readonly IHttpRequestSender requestSender;
+namespace SagePayMvc
+{
+    /// <summary>
+    /// Default ITransactionRegistrar implementation
+    /// </summary>
+    public class TransactionRegistrar : ITransactionRegistrar
+    {
+        readonly Configuration configuration;
+        readonly IUrlResolver urlResolver;
+        readonly IHttpRequestSender requestSender;
 
-		/// <summary>
-		/// Creates a new instance of the TransactionRegistrar using the configuration specified in teh web.conf, the default URL Resolver and an HTTP Request Sender.
-		/// </summary>
-		public TransactionRegistrar() : this(Configuration.Current, UrlResolver.Current, new HttpRequestSender()) {
-		}
+        /// <summary>
+        /// Creates a new instance of the TransactionRegistrar using the configuration specified in teh web.conf, the default URL Resolver and an HTTP Request Sender.
+        /// </summary>
+        public TransactionRegistrar() : this(Configuration.Current, UrlResolver.Current, new HttpRequestSender())
+        {
+        }
 
-		/// <summary>
-		/// Creates a new instance of the TransactionRegistrar
-		/// </summary>
-		public TransactionRegistrar(Configuration configuration, IUrlResolver urlResolver, IHttpRequestSender requestSender) {
-			this.configuration = configuration;
-			this.requestSender = requestSender;
-			this.urlResolver = urlResolver;
-		}
+        /// <summary>
+        /// Creates a new instance of the TransactionRegistrar
+        /// </summary>
+        public TransactionRegistrar(Configuration configuration, IUrlResolver urlResolver,
+            IHttpRequestSender requestSender)
+        {
+            this.configuration = configuration;
+            this.requestSender = requestSender;
+            this.urlResolver = urlResolver;
+        }
 
-		public TransactionRegistrationResponse Send(RequestContext context, string vendorTxCode, ShoppingBasket basket,
-								Address billingAddress, Address deliveryAddress, string customerEmail, PaymentFormProfile paymentFormProfile = PaymentFormProfile.Normal, string currencyCode="GBP",
-								MerchantAccountType accountType=MerchantAccountType.Ecommerce, TxType txType=TxType.Payment) {
-			string sagePayUrl = configuration.RegistrationUrl;
-			string notificationUrl = urlResolver.BuildNotificationUrl(context);
+        public TransactionRegistrationResponse Send(IUrlHelper urlHelper, string vendorTxCode, ShoppingBasket basket,
+            Address billingAddress, Address deliveryAddress, string customerEmail,
+            PaymentFormProfile paymentFormProfile = PaymentFormProfile.Normal, string currencyCode = "GBP",
+            MerchantAccountType accountType = MerchantAccountType.Ecommerce, TxType txType = TxType.Payment)
+        {
+            var sagePayUrl = configuration.RegistrationUrl;
+            var notificationUrl = urlResolver.BuildNotificationUrl(urlHelper);
 
-			var registration = new TransactionRegistration(
-				vendorTxCode, basket, notificationUrl,
-				billingAddress, deliveryAddress, customerEmail,
-				configuration.VendorName,
-				paymentFormProfile, currencyCode, accountType, txType);
+            var registration = new TransactionRegistration(
+                vendorTxCode, basket, notificationUrl,
+                billingAddress, deliveryAddress, customerEmail,
+                configuration.VendorName,
+                paymentFormProfile, currencyCode, accountType, txType);
 
-			var serializer = new HttpPostSerializer();
-			var postData = serializer.Serialize(registration);
+            var serializer = new HttpPostSerializer();
+            var postData = serializer.Serialize(registration);
 
-			var response = requestSender.SendRequest(sagePayUrl, postData);
+            var response = requestSender.SendRequest(sagePayUrl, postData);
 
-			var deserializer = new ResponseSerializer();
-			return deserializer.Deserialize<TransactionRegistrationResponse>(response);
-		}
-	}
+            var deserializer = new ResponseSerializer();
+            return deserializer.Deserialize<TransactionRegistrationResponse>(response);
+        }
+    }
 }
