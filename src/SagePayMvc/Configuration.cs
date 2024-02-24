@@ -40,11 +40,10 @@ namespace SagePayMvc
         public const decimal DefaultVatMultiplier = 1.2m;
         public const string DefaultResponseAction = "Index";
 
-        public const string LiveUrl = "https://live.sagepay.com/gateway/service/vspserver-register.vsp";
-        public const string TestUrl = "https://test.sagepay.com/gateway/service/vspserver-register.vsp";
+        public const string LiveUrl = "https://live.opayo.eu.elavon.com/gateway/service/vspserver-register.vsp";
+        public const string TestUrl = "https://sandbox.opayo.eu.elavon.com/gateway/service/vspserver-register.vsp";
+        public const string SimulatorUrl = "https://test.sagepay.com/simulator/VSPServerGateway.asp?Service=VendorRegisterTx";
 
-        public const string SimulatorUrl =
-            "https://test.sagepay.com/simulator/VSPServerGateway.asp?Service=VendorRegisterTx";
 
         public const string LiveRefundUrl = "https://live.sagepay.com/gateway/service/refund.vsp";
         public const string TestRefundUrl = "https://test.sagepay.com/gateway/service/refund.vsp";
